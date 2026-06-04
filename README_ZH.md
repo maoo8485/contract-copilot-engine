@@ -49,6 +49,8 @@ python3 -m pip install -r scripts/requirements.txt
 
 ## 架构
 
+![架构图](docs/architecture-diagram.png)
+
 ```
 contract-copilot-engine/
 ├── SKILL.md                    # 路由入口（调度）

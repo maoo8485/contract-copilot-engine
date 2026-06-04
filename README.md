@@ -50,6 +50,8 @@ The engine executes 3 calls + DOCX output:
 
 ## Architecture
 
+![Architecture Diagram](docs/architecture-diagram.png)
+
 ```
 contract-copilot-engine/
 ├── SKILL.md                    # Routing entry point
