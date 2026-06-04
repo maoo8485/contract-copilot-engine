@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contract Copilot Engine — 分层架构</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #f5f3f0;
+    color: #1a1a1a;
+    padding: 40px 24px;
+    display: flex;
+    justify-content: center;
+  }
+
+  .diagram {
+    max-width: 960px;
+    width: 100%;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    text-align: center;
+    color: #2c2c2c;
+    margin-bottom: 4px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 36px;
+  }
+
+  /* ── Layers ── */
+  .layer {
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 2px;
+    position: relative;
+  }
+  .layer-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .layer-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    color: #fff;
+  }
+  .layer-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  /* Layer colors — open source version */
+  .l-entry           { background: #fff; border-left: 4px solid #1e6f5c; }
+  .l-entry .layer-label { background: #1e6f5c; }
+  .l-entry .layer-title  { color: #1e6f5c; }
+
+  .l-call            { background: #fafbfc; border-left: 4px solid #005792; }
+  .l-call .layer-label  { background: #005792; }
+  .l-call .layer-title   { color: #005792; }
+
+  .l-framework       { background: #fff; border-left: 4px solid #0d6ea8; }
+  .l-framework .layer-label { background: #0d6ea8; }
+  .l-framework .layer-title  { color: #0d6ea8; }
+
+  .l-playbook        { background: #fafbfc; border-left: 4px solid #d47b11; }
+  .l-playbook .layer-label { background: #d47b11; }
+  .l-playbook .layer-title  { color: #d47b11; }
+
+  .l-exec            { background: #fff; border-left: 4px solid #7b4b94; }
+  .l-exec .layer-label   { background: #7b4b94; }
+  .l-exec .layer-title    { color: #7b4b94; }
+
+  .l-output          { background: #fafbfc; border-left: 4px solid #2a6e3f; }
+  .l-output .layer-label  { background: #2a6e3f; }
+  .l-output .layer-title   { color: #2a6e3f; }
+
+  .l-feedback        { background: #fff; border-left: 4px solid #c62828; }
+  .l-feedback .layer-label { background: #c62828; }
+  .l-feedback .layer-title  { color: #c62828; }
+
+  /* ── Boxes ── */
+  .items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .item {
+    background: #fff;
+    border: 1px solid #e0dcd7;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: #333;
+    white-space: nowrap;
+    position: relative;
+  }
+  .item.file {
+    font-family: "SF Mono", "Cascadia Code", "Menlo", monospace;
+    font-size: 12px;
+    background: #f9f8f6;
+  }
+  .item .tag {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-left: 6px;
+    vertical-align: 1px;
+  }
+  .tag.sched  { background: #e2f0eb; color: #1e6f5c; }
+  .tag.call   { background: #dbe9f4; color: #005792; }
+  .tag.frame  { background: #d4e6f5; color: #0d6ea8; }
+  .tag.user   { background: #fdf0df; color: #d47b11; }
+  .tag.run    { background: #eedaf5; color: #7b4b94; }
+  .tag.out    { background: #e2f0e5; color: #2a6e3f; }
+  .tag.fb     { background: #fde0e0; color: #b71c1c; }
+
+  .badge-open {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+    background: #e8f5e9;
+    color: #2e7d32;
+    vertical-align: 2px;
+  }
+  .badge-user {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 4px;
+    background: #fff3e0;
+    color: #e65100;
+    vertical-align: 2px;
+  }
+
+  /* ── Flow arrows ── */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 10px 0 6px;
+    padding-left: 8px;
+  }
+  .flow-step {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+  .step-box {
+    background: #fff;
+    border: 1.5px solid #005792;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #005792;
+  }
+  .step-box.cond {
+    border-style: dashed;
+    background: #fbfaf7;
+    color: #7b4b94;
+    border-color: #7b4b94;
+  }
+  .arrow {
+    color: #aaa;
+    font-size: 14px;
+    margin: 0 4px;
+  }
+
+  /* ── Spec sub-box ── */
+  .spec-block {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #faf9f7;
+    border: 1px dashed #d9d5ce;
+    border-radius: 4px;
+  }
+  .spec-block .spec-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #999;
+    margin-bottom: 8px;
+  }
+
+  /* ── Connector lines ── */
+  .connector {
+    text-align: center;
+    color: #bbb;
+    font-size: 16px;
+    line-height: 1;
+    user-select: none;
+    margin: -2px 0;
+  }
+
+  /* ── Key ── */
+  .key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 36px;
+    font-size: 12px;
+    color: #777;
+  }
+  .key span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .key-dot {
+    width: 8px; height: 8px; border-radius: 2px; display: inline-block;
+  }
+
+  .legend-divider {
+    width: 1px;
+    height: 14px;
+    background: #ddd;
+    margin: 0 4px;
+  }
+</style>
+</head>
+<body>
+<div class="diagram">
+
+  <h1>Contract Copilot Engine</h1>
+  <p class="subtitle">开源版本 · 7 层架构</p>
+
+  <!-- Layer 1: Entry -->
+  <div class="layer l-entry">
+    <div class="layer-header">
+      <span class="layer-label">L1</span>
+      <span class="layer-title">入口调度层</span>
+    </div>
+    <div class="items">
+      <span class="item file"><b>SKILL.md</b><span class="tag sched">89 行</span></span>
+      <span class="item">Step 0 准入 · 立场确认</span>
+      <span class="item">→ Call 1</span>
+      <span class="item">→ Call 2</span>
+      <span class="item">→ Call 3（条件触发）</span>
+      <span class="item">→ DOCX 输出</span>
+      <span class="item"><span class="tag sched">仅做路由，不执行</span></span>
+    </div>
+
+    <div class="flow">
+      <div class="flow-step"><span class="step-box">Step 0<br>准入</span></div>
+      <span class="arrow">→</span>
+      <div class="flow-step"><span class="step-box">Step 1<br>Call 1</span></div>
+      <span class="arrow">→</span>
+      <div class="flow-step"><span class="step-box">Step 2<br>Call 2</span></div>
+      <span class="arrow">→</span>
+      <div class="flow-step"><span class="step-box cond">Step 3<br>Call 3?</span></div>
+      <span class="arrow">→</span>
+      <div class="flow-step"><span class="step-box">Step 4<br>DOCX</span></div>
+    </div>
+  </div>
+
+  <div class="connector">⇣  按执行顺序逐级读取  ⇣</div>
+
+  <!-- Layer 2: Call -->
+  <div class="layer l-call">
+    <div class="layer-header">
+      <span class="layer-label">L2</span>
+      <span class="layer-title">调用指令层（references/）<span class="badge-open">开源提供</span></span>
+    </div>
+    <div class="items">
+      <span class="item file">call1-structure-scan.md<span class="tag call">~800 words</span></span>
+      <span class="item file">call2-issue-identification.md<span class="tag call">~860 words</span></span>
+      <span class="item file">call3-deep-analysis.md<span class="tag call">~950 words</span></span>
+      <span class="item file">docx-pipeline.md<span class="tag call">~1,100 words</span></span>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">每份文件的职责边界</div>
+      <div class="items">
+        <span class="item">Call 1 → 合同类型识别 · Playbook 路由 · 宏观 + 中观扫描</span>
+        <span class="item">Call 2 → Playbook 条款比对 · 四维审核 · 结构化问题清单</span>
+        <span class="item">Call 3 → 模式提炼 · 审批触发 · 谈判优先级（手动确认）</span>
+        <span class="item">DOCX → 修订批注管线 · 审查报告生成 · 失败降级</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="connector">⇣  指令层引用框架层  ⇣</div>
+
+  <!-- Layer 3: Framework -->
+  <div class="layer l-framework">
+    <div class="layer-header">
+      <span class="layer-label">L3</span>
+      <span class="layer-title">参考框架层（references/）<span class="badge-open">开源提供</span></span>
+    </div>
+    <div class="items">
+      <span class="item file">contract-routing.md<span class="tag frame">12 类路由</span></span>
+      <span class="item file">review-framework.md<span class="tag frame">通用框架</span></span>
+      <span class="item file">priority-clauses.md<span class="tag frame">重点条款</span></span>
+      <span class="item file">revision-strategy.md<span class="tag frame">修订策略</span></span>
+      <span class="item file">setup-dependencies.md<span class="tag frame">环境配置</span></span>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">12 类合同通用路由 + 宏观/中观/微观审查框架 + 修订决策树</div>
+      <div class="spec-title" style="margin-top:6px;">不含行业特定的条款立场或风险阈值 — 这些在 Playbook 层由用户定义</div>
+    </div>
+  </div>
+
+  <div class="connector">⇣  框架层的路由规则索引 Playbook  ⇣</div>
+
+  <!-- Layer 4: Playbook (user-filled) -->
+  <div class="layer l-playbook">
+    <div class="layer-header">
+      <span class="layer-label">L4</span>
+      <span class="layer-title">Playbook 层（config/playbooks/）<span class="badge-user">🧩 用户填充</span></span>
+    </div>
+    <div class="items">
+      <span class="item file">playbook.schema.json<span class="tag user">结构定义</span></span>
+      <span class="item">条款标准立场</span>
+      <span class="item">风险阈值 Tier 1-3</span>
+      <span class="item">审批升级规则</span>
+      <span class="item">谈判策略 fallback</span>
+      <span class="item">示范文本模式</span>
+      <span class="item">反馈纠错 records[]</span>
+    </div>
+    <div class="spec-block">
+      <div class="spec-title">开源提供 Schema 结构定义和字段说明</div>
+      <div class="spec-title" style="margin-top:6px;color:#d47b11;">⚠ 具体条款立场、行业审查标准、风险阈值由用户按自身行业需要填充</div>
+    </div>
+  </div>
+
+  <div class="connector">⇣  Playbook 数据驱动执行引擎  ⇣</div>
+
+  <!-- Layer 5: Execution -->
+  <div class="layer l-exec">
+    <div class="layer-header">
+      <span class="layer-label">L5</span>
+      <span class="layer-title">执行引擎层（scripts/）<span class="badge-open">开源提供</span></span>
+    </div>
+    <div class="items">
+      <span class="item file">apply_review_plan.py<span class="tag run">主入口</span></span>
+      <span class="item file">plan_loader.py<span class="tag run">计划加载</span></span>
+      <span class="item file">action_executor.py<span class="tag run">修订执行</span></span>
+      <span class="item file">review_runtime.py<span class="tag run">上下文解析</span></span>
+      <span class="item file">enrich_review_plan.py<span class="tag run">计划增强</span></span>
+      <span class="item file">report_docx.py / reporting.py</span>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:12px;align-items:center;font-size:13px;color:#555;">
+      <span>+ <code>pandoc</code> Markdown → DOCX</span>
+      <span>+ OOXML track changes</span>
+      <span style="color:#7b4b94;">失败时自动降级：→ 修订标注 Markdown + pandoc 报告 DOCX</span>
+    </div>
+  </div>
+
+  <div class="connector">⇣  产出交付物  ⇣</div>
+
+  <!-- Layer 6: Output -->
+  <div class="layer l-output">
+    <div class="layer-header">
+      <span class="layer-label">L6</span>
+      <span class="layer-title">产出层</span>
+    </div>
+    <div class="items">
+      <span class="item file">_审核修订版.docx<span class="tag out">修订 + 批注</span></span>
+      <span class="item file">_审查报告.docx<span class="tag out">8 节报告</span></span>
+      <span class="item file">review-plan.json<span class="tag out">结构化计划</span></span>
+    </div>
+  </div>
+
+  <div class="connector" style="font-size:20px;">⟲</div>
+
+  <!-- Layer 7: Feedback -->
+  <div class="layer l-feedback">
+    <div class="layer-header">
+      <span class="layer-label">L7</span>
+      <span class="layer-title">反馈闭环层<span class="badge-user" style="margin-left:4px;">🧩 Playbook 存储</span></span>
+    </div>
+    <div class="items">
+      <span class="item">用户纠正 → Playbook JSON <span class="tag fb">feedbackCorrections</span></span>
+      <span class="item">Call 1 自动注入历史纠正记录</span>
+      <span class="item">下次审查不再重复犯错</span>
+    </div>
+  </div>
+
+  <!-- Key -->
+  <div class="key">
+    <span><span class="key-dot" style="background:#1e6f5c;"></span> 入口调度</span>
+    <span><span class="key-dot" style="background:#005792;"></span> 调用指令</span>
+    <span><span class="key-dot" style="background:#0d6ea8;"></span> 参考框架</span>
+    <span><span class="key-dot" style="background:#d47b11;"></span> Playbook</span>
+    <span><span class="key-dot" style="background:#7b4b94;"></span> 执行引擎</span>
+    <span><span class="key-dot" style="background:#2a6e3f;"></span> 产出物</span>
+    <span><span class="key-dot" style="background:#c62828;"></span> 反馈闭环</span>
+    <span class="legend-divider"></span>
+    <span style="color:#2e7d32;">▸ 开源提供</span>
+    <span style="color:#e65100;">▸ 用户填充</span>
+  </div>
+
+</div>
+</body>
+</html>

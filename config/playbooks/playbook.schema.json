@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contract-copilot.dev/playbook.schema.json",
+  "title": "Contract Copilot Playbook Schema",
+  "description": "定义合同审查的条款标准立场、风险阈值、审批层级和谈判策略的结构化 schema。用户根据自身行业和业务需求填充实际内容。",
+  "type": "object",
+  "required": ["meta", "context", "tiers", "clauses"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["name", "contractType", "jurisdiction", "partyPosition", "version"],
+      "properties": {
+        "name": {"type": "string", "description": "Playbook 名称，如 sale-playbook"},
+        "description": {"type": "string"},
+        "contractType": {"type": "string", "description": "12 类合同类型，如 买卖合同-房地产增强"},
+        "subTypes": {"type": "array", "items": {"type": "string"}},
+        "jurisdiction": {"type": "string", "description": "法域，如 中国大陆"},
+        "partyPosition": {"type": "string", "description": "审查立场：甲方/乙方/中立"},
+        "version": {"type": "string"},
+        "source": {"type": "string", "description": "Playbook 知识来源说明"}
+      }
+    },
+    "context": {
+      "type": "object",
+      "properties": {
+        "coreDemands": {"type": "array", "items": {"type": "string"}, "description": "核心诉求列表"},
+        "transactionModes": {
+          "type": "object",
+          "description": "交易模式分类及其核心参数",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "guarantee": {"type": "string"},
+              "delayPenalty": {"type": "string"},
+              "terminationDamages": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "tiers": {
+      "type": "object",
+      "description": "风险分级（Tier 1-3），Deal-breaker / 可谈判 / 优化项",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["label"],
+        "properties": {
+          "label": {"type": "string", "description": "如 Deal-breaker（不可让步）"},
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["clause", "standard"],
+              "properties": {
+                "clause": {"type": "string", "description": "条款名称"},
+                "standard": {"type": "string", "description": "标准立场描述"},
+                "legalBasis": {"type": "string", "description": "法律依据"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "clauses": {
+      "type": "object",
+      "description": "条款级审查标准。key 为条款类型，value 为审查标准",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["standard", "acceptable", "redFlags"],
+        "properties": {
+          "clauseTypes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "匹配关键词，用于在合同中定位对应条款"
+          },
+          "standard": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "标准立场（符合标准则通过）"
+          },
+          "acceptable": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "可接受的偏离"
+          },
+          "redFlags": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "红线触发条件"
+          },
+          "legalBasis": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "法律依据（法条引用）"
+          },
+          "fallback": {"type": "string", "description": "备选方案"},
+          "commonCounter": {"type": "string", "description": "对方常见反驳及应对"},
+          "approvalTrigger": {
+            "type": "object",
+            "description": "偏离时触发审批升级的条件",
+            "properties": {
+              "condition": {"type": "string"},
+              "escalateTo": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "approvalRules": {
+      "type": "array",
+      "description": "审批升级规则",
+      "items": {
+        "type": "object",
+        "required": ["trigger", "escalateTo"],
+        "properties": {
+          "trigger": {"type": "string", "description": "触发条件"},
+          "escalateTo": {"type": "string", "description": "升级至（generalManager / priceCommittee / externalCounsel）"},
+          "description": {"type": "string"}
+        }
+      }
+    },
+    "negotiationStrategy": {
+      "type": "object",
+      "description": "谈判策略框架",
+      "properties": {
+        "tier1": {"type": "array", "items": {"type": "string"}, "description": "第一梯队：不可让步"},
+        "tier2": {"type": "array", "items": {"type": "string"}, "description": "第二梯队：可谈判但须补偿"},
+        "tier3": {"type": "array", "items": {"type": "string"}, "description": "第三梯队：战略让步筹码"}
+      }
+    },
+    "benchmarkVersions": {
+      "type": "object",
+      "description": "示范文本版本及条款模板（可选）",
+      "properties": {
+        "versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "name": {"type": "string"},
+              "clauseTemplates": {
+                "type": "object",
+                "additionalProperties": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "feedbackCorrections": {
+      "type": "object",
+      "description": "反馈纠错记录",
+      "properties": {
+        "records": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "clauseType", "originalFinding", "correction", "reason"],
+            "properties": {
+              "date": {"type": "string"},
+              "clauseType": {"type": "string"},
+              "contractType": {"type": "string"},
+              "originalFinding": {"type": "string"},
+              "correction": {"type": "string"},
+              "reason": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

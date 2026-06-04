@@ -1,0 +1,17 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+config/reviewer_profile.json
+config/review_memory.json
+config/playbooks/*.json
+!config/playbooks/playbook.schema.json
+contract-types/
+*.bak.*
+output/
+tmp/
