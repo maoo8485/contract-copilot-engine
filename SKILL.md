@@ -1,3 +1,15 @@
+---
+name: contract-copilot
+description: >-
+  合同审查与起草助手。执行 3 次 LLM 调用 + DOCX 输出的审查管线：
+  Call 1 结构扫描 → Call 2 问题识别 → Call 3 深度分析（条件触发） → DOCX 修订批注与审查报告生成。
+  服务房地产各类业务合同，基于四维审核法（业务风险/法律专业性/条款一致性/业务需求还原度）执行审查。
+  本文件为调度入口，详细指令在 references/ 目录下的子文件中。
+homepage: https://github.com/maoo8485/contract-copilot-engine
+version: "3.0.0"
+license: MIT
+---
+
 # Contract Copilot（合同助手）
 
 > 审查执行入口。详细指令在 `references/` 下的四份文件中。本文件只做调度。
